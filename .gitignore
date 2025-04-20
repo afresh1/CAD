@@ -1,0 +1,12 @@
+.*
+!.gitignore
+*\.sw?
+*~
+*.core
+*.bs
+*.bak
+*.orig
+
+BOSL2/
+
+
