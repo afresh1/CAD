@@ -15,7 +15,7 @@
  */
 
 // Height of the funnel
-height = 25;
+height = 30;
 
 // Top diameter inside/outside
 top    = [ 74.75, 76.5 ];
@@ -24,7 +24,7 @@ top    = [ 74.75, 76.5 ];
 bottom = [ 71.0, 78.0 ];
 
 // Diameter of the middle stem
-hole   = 15;
+hole   = 17;
 
 // Number of rails holding the middle hole cover
 rails = 3;
