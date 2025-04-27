@@ -17,3 +17,5 @@ Many apologies for the lack of comments or common sense in these
 models.  When designing many of them, I wasn't thinking towards
 making them available to anyone else.  If you find one useful, file
 an issue and I can try to refactor to make them easier to understand.
+
+Makefiles are in OpenBSD Make format.
