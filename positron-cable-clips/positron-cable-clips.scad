@@ -31,10 +31,18 @@ cableOffset = 15;
 upperCable = 60;
 standWidth = 5;
 
+coverHinge       = [ 11, 25, 19.5 ];
+hingeOffset      = 3.0;
+hingeGap         = 0.5;
+hingeDiameter    = 10;
+hingeArmLength   = 50;
+hingeArmMovement = 15;
+
 $fa = $preview ? $fa : 5.0;
 $fs = $preview ? $fs : 0.5;
 
 module clip() { // make me
+    translate([0,-wall,0])
     difference() {
         hull() for (x=points.x, y=points.y) translate([x,y,0])
             sphere(d=outerDiameter);
@@ -73,7 +81,7 @@ module stand() { // make me
                 [ 0, standWidth/2 ],
                 [ 0, upperCable-standWidth/2 ],
 
-                for (x=[-0.5, 0.5], y=[0,1]) 
+                for (x=[-0.5, 0.5], y=[0,1])
                     [ x*(standWidth+length), upperCable + y*(outerDiameter+standWidth)],
             ];
             echo(points);
@@ -100,8 +108,188 @@ module stand() { // make me
     }
 }
 
+module hingePin(gap = 0) {
+    h = coverHinge.z; //gap + coverHinge.z  + gap;
+    d = 2*gap + hingeDiameter + 2*gap;
 
-for (y=[0, 20, 40]) translate([42,y,outerDiameter/2])
-    rotate(90) clip();
+    //translate([0,0,-gap])
+    difference() {
+        cylinder(d=d, h=h);
 
-stand();
+        translate([0,0,h/2]) rotate_extrude()
+            translate([d*0.55, 0]) resize([d*2/3, h/2]) circle(d=h/2);
+    }
+}
+
+module coverHinge() {
+    hingePosition = [-hingeOffset, coverHinge.y - hingeDiameter/2, 0];
+
+    rotate([0,180,0])
+        translate([-152, -136,-19.5])
+        import("Toolboard_Cover - 1x - Accent - V1.0.stl");
+
+    difference() {
+        hull() {
+            translate([0,-0.5,coverHinge.z/2])
+                cube([coverHinge.x, 0, coverHinge.z], true);
+
+                linear_extrude(coverHinge.z)
+                    polygon([
+                        [-coverHinge.x/2-0.5, -0.5],
+                        [ coverHinge.x/2-0.5,  0],
+                        [ coverHinge.x/2+0.5, -8.5],
+                    ]);
+
+            translate(hingePosition)
+                cylinder(d=hingeDiameter, h=coverHinge.z);
+        }
+
+        translate(hingePosition)
+            difference() {
+                translate([0,0,coverHinge.z*1/4]) union() {
+                    cylinder(d=hingeDiameter, h=coverHinge.z/2);
+
+                    rotate(68) translate([0,0, coverHinge.z/4 ])
+                        cube([hingeDiameter + 10*hingeGap, coverHinge.y, coverHinge.z/2], true);
+                }
+                hingePin();
+            }
+    }
+}
+
+module arm() {
+    bottomThickness = ( coverHinge.z - outerDiameter )/2;
+
+    difference() {
+        hull() {
+            translate([0,0,bottomThickness])
+                cylinder(d=hingeDiameter, h=coverHinge.z - bottomThickness);
+
+            translate([0,coverHinge.y,0])
+                cylinder(d=hingeDiameter, h=coverHinge.z);
+
+            translate([
+                0,
+                hingeArmLength + hingeArmMovement - outerDiameter/2,
+                bottomThickness
+            ]) cylinder(
+                d1=outerDiameter,
+                d2=2*outerDiameter,
+                h=coverHinge.z - bottomThickness
+            );
+
+        }
+
+        // front top angle
+        *translate([
+            -outerDiameter,
+            hingeArmLength/2,
+            coverHinge.z,
+        ]) rotate([-8,0,0]) cube([
+            2*outerDiameter, hingeArmLength, outerDiameter
+        ]);
+
+        // rear top angle
+        *translate([
+            -outerDiameter,
+            hingeDiameter/2 - hingeGap/2,
+            coverHinge.z * 3/4 + hingeGap
+        ]) rotate([21,0,0]) cube([
+            2*outerDiameter, hingeArmLength/2, outerDiameter
+        ]);
+
+        // Clip Shelf
+        translate([
+            0,
+            hingeArmLength + hingeArmMovement-outerDiameter/2,
+            coverHinge.z
+        ]) rotate([90,0,90]) {
+            p = [ [outerDiameter,0], [0,outerDiameter] ];
+            translate([0,0,-outerDiameter])
+                cylinder(d=2*outerDiameter, h=2*outerDiameter);
+            for (i=[0,1]) rotate((i-0.5)*30) translate(p[i]) cube(2*outerDiameter, true);
+        }
+
+        // Cable races
+        for (i=[-1,1]) translate([
+            0,
+            hingeArmLength + hingeArmMovement + length,
+            coverHinge.z/2 + cableDiameter/2
+        ]) rotate([i*10, -90, 90]) {
+                h=2*(hingeArmLength + hingeArmMovement);
+                cylinder(d=outerDiameter, h=h);
+                for (s=[
+                    [2*outerDiameter,  outerDiameter,h],
+                    [  outerDiameter,2*outerDiameter,h],
+                ]) translate([outerDiameter/2,i*-outerDiameter/2,h/2])
+                    cube(s, true);
+            }
+
+        // knob when folded
+        knobDiameter  = 25;
+        knobInnerDiameter = 15;
+        knobThickness = 10;
+        translate([
+            -knobDiameter/2 ,//- wall,
+            knobDiameter/2 + hingeDiameter/2 - hingeOffset/2 - wall,
+            -0.01
+        ]) translate([0,0,bottomThickness])
+            cylinder(d=knobDiameter, h=coverHinge.z);
+
+        headThickness = (coverHinge.z + hingeGap)/4;
+
+        // angle cuts to allow opening further
+        rotate(-68)
+        for (i=[0,1]) translate([0,0,
+            i*(coverHinge.z - headThickness) + headThickness/2
+        ]) cube([
+            hingeDiameter + 5*hingeGap,
+            2*coverHinge.y,
+            headThickness+0.1
+        ], true);
+
+        hingePin(hingeGap);
+    }
+}
+
+module hingedArm() { // make me
+    coverHinge();
+    translate([-hingeOffset, coverHinge.y - hingeDiameter/2,0])
+        rotate(-90)
+        //rotate(-130)
+        //rotate(30)
+        arm();
+}
+
+
+for (y=[0, 20, 40]) translate([0,y+10,0])
+   rotate([90]) clip();
+
+translate([32, 10, coverHinge.z]) rotate([0,180,-90]) hingedArm();
+
+/*
+!union() {
+    translate([-hingeDiameter/2,0,0]) difference() {
+        cube([hingeDiameter, coverHinge.y, coverHinge.z]);
+        translate([-0.1,0,coverHinge.z/4-0.1])
+            cube([hingeDiameter+0.2, hingeDiameter/2+0.1, coverHinge.z/2+0.2]);
+    }
+    hingePin();
+    color("red", 0.3)
+    difference() {
+        union() {
+            translate([-hingeDiameter/2,-coverHinge.y,0]) difference() {
+                cube([hingeDiameter, coverHinge.y, coverHinge.z]);
+            for (i=[0,1])
+                translate([
+                    -0.1,
+                    coverHinge.y-hingeDiameter/2-0.1,
+                    i*(coverHinge.z*3/4)-0.2])
+                    cube([hingeDiameter+0.2, hingeDiameter/2+0.1, coverHinge.z/4+0.4]);
+            }
+            cylinder(d=hingeDiameter, h=coverHinge.z);
+        }
+        hingePin(hingeGap);
+    }
+}
+*/
