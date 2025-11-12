@@ -20,3 +20,12 @@ when at home.
 
 ![In the milk pitcher](20250420_140240.jpg)
 
+The Filter Holder is used to stack filters and the tamp for storage inside
+the steam pitcher.
+It also keeps them together and easier to dispense as needed.
+
+![A fully disassembled setup](20251107_110336.jpg)
+![The tamp sitting on the filters on the holder (with a test next to them)](20251107_110404.jpg)
+![The holder with filters inside the steam pitcher](20251107_110431.jpg)
+![Everything in the steam pitcher hidden by the tamp and dosing funnel](20251107_110444.jpg)
+
