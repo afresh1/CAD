@@ -261,11 +261,114 @@ module hingedArm() { // make me
         arm();
 }
 
+module railGuide() { // make me
+    bearingD = 17;
+    bearingH =  6;
+    railSize = [27, 9, 10];
+    railGrooveD    = 1;
+    railGrooveDown = 1;
+    railOffsetFromBearing = 5;
+
+    rail = railSize + [ 0, 0.25, -bearingH/2 ];
+
+    nutSize = 5;
+    nutD = 1.1*2*( nutSize / sqrt(3) );
+
+    bigScrewD = 6.5;
+    bigScrewOffsetFromBearing = 2;
+
+    guideZOffset = 2.5;
+    guideH   = bearingH + rail.z + guideZOffset;
+    guideD1  = rail.y   + 1;
+    guideD2a = bearingD * 2 + 4;
+    guideD2b = 2*12; // measured, but don't want configurable
+
+    bearingHole = bearingD + 1;
+
+    module cutout() {
+        translate([
+            -rail.x/2 + bearingHole/2 - railOffsetFromBearing,
+            0,
+            rail.z/2
+        ]) difference() {
+            cube(rail, true);
+            translate([-rail.x/2-1,0, rail.z/2-railGrooveDown-railGrooveD/2 ])
+                rotate([0,90,0]) linear_extrude(rail.x+2)
+                for (p=[-0.5,0.5]) translate([0,p*(rail.y+0.5)])
+                    circle(d=railGrooveD);
+        }
+
+        // bearing
+        translate([0,0,-bearingH]) {
+            h = bearingH * 1.1; // clearance
+            cylinder(d=bearingHole, h=h);
+            translate([-bearingHole,0,h/2])
+                cube([2*bearingHole,bearingHole,h], true);
+        }
+
+        // nut
+        cylinder(d=nutD, h=2*rail.z, $fn=6);
+
+        // cutout for the "big screw" when closed up
+        translate([bearingD/2+bigScrewD/2+bigScrewOffsetFromBearing,0,-bearingH])
+            linear_extrude(20) {
+                circle(d=bigScrewD);
+                translate([bigScrewD/2,0]) square(bigScrewD, true);
+            }
+
+        // extra cut off of point where bearing goes into rail
+        translate([-bearingD+bearingH/2, bearingHole/2, -(0.9*bearingH)/2])
+            cube([bearingHole, bearingHole, 1.1*bearingH], true);
+    }
+
+    difference() {
+        translate([0,0,-bearingH+0.1]) hull() {
+            dL = guideD2a;
+            dR = guideD2b;
+
+            translate([0,0,guideH - bearingH/4])
+                rotate_extrude()
+                translate([guideD1/2,0])
+                    circle(d=bearingH/2);
+
+            difference() {
+                rotate_extrude()
+                    translate([bearingD,0])
+                    circle(d=bearingH);
+                translate([0,dL,0.5])   cube([2*dL,2*dL,bearingD+1], true);
+                translate([0,0,-dL]) cube(2*dL, true);
+            }
+
+            difference() {
+                resize([dL,dR,bearingH])
+                rotate_extrude()
+                    translate([bearingD,0])
+                    circle(d=bearingH);
+                translate([0,-dL,0.5])   cube([2*dL,2*dL,bearingD+1], true);
+                translate([0,0,-dL]) cube(2*dL, true);
+            }
+        }
+
+        cutout();
+
+        translate([bearingD/2,guideD2a,-bearingH]) {
+            h=bearingH;
+            w=2*guideD2a;
+
+            rotate([90]) cylinder(d=h, h=w);
+            translate([w/2,-w/2,0]) cube([w,w,h], true);
+        }
+
+        *translate([0,0,-45/2 - 2]) rotate([12]) cube(45, true);
+    }
+}
 
 for (y=[0, 20, 40]) translate([0,y+10,0])
    rotate([90]) clip();
 
 translate([32, 10, coverHinge.z]) rotate([0,180,-90]) hingedArm();
+
+translate([72,15,9.5]) rotate([180]) railGuide();
 
 /*
 !union() {
