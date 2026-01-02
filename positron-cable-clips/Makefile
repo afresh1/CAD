@@ -10,5 +10,8 @@ all: ${FILES}
 
 .SUFFIXES: .scad ${SUFFIX}
 
+PREAMBLE= $$fa=1.0;$$fs=0.1;use
+
 ${FILES}: $(SCAD)
-	print 'use <$(>)>;\n${@:C/^${PREFIX}//:C/${SUFFIX}$//}();' | openscad -m make -o $@ -
+	print '${PREAMBLE} <$(>)>;\n${@:C/^${PREFIX}//:C/${SUFFIX}$//}();' | \
+	    openscad -o $@ -
