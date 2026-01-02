@@ -1,6 +1,6 @@
 #!/usr/bin/env make
 SCAD=positron-cable-clips.scad
-SUFFIX = .stl
+SUFFIX = .3mf
 
 # match "module foobar() { // `make` me"
 PREFIX = ${SCAD:S/clips.scad//}
@@ -13,5 +13,5 @@ all: ${FILES}
 PREAMBLE= $$fa=1.0;$$fs=0.1;use
 
 ${FILES}: $(SCAD)
-	print '${PREAMBLE} <$(>)>;\n${@:C/^${PREFIX}//:C/${SUFFIX}$//}();' | \
+	print '${PREAMBLE} <$(>)>;\nrotate([180]) ${@:C/^${PREFIX}//:C/${SUFFIX}$//}();' | \
 	    openscad -o $@ -
