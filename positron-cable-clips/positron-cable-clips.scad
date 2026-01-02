@@ -110,7 +110,7 @@ module stand() { // make me
 
 module hingePin(gap = 0) {
     h = coverHinge.z; //gap + coverHinge.z  + gap;
-    d = 2*gap + hingeDiameter + 2*gap;
+    d = gap + hingeDiameter + gap;
 
     //translate([0,0,-gap])
     difference() {
@@ -165,17 +165,17 @@ module arm() {
             translate([0,0,bottomThickness])
                 cylinder(d=hingeDiameter, h=coverHinge.z - bottomThickness);
 
-            translate([0,coverHinge.y,0])
-                cylinder(d=hingeDiameter, h=coverHinge.z);
+            *translate([0,coverHinge.y,2*wall])
+                cylinder(d=hingeDiameter, h=coverHinge.z/2);
 
             translate([
                 0,
                 hingeArmLength + hingeArmMovement - outerDiameter/2,
-                bottomThickness
+                bottomThickness + wall
             ]) cylinder(
                 d1=outerDiameter,
                 d2=2*outerDiameter,
-                h=coverHinge.z - bottomThickness
+                h=coverHinge.z - bottomThickness - wall
             );
 
         }
