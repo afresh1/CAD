@@ -38,8 +38,8 @@ hingeDiameter    = 10;
 hingeArmLength   = 50;
 hingeArmMovement = 15;
 
-$fa = $preview ? $fa : 5.0;
-$fs = $preview ? $fs : 0.5;
+$fa = $preview ? $fa : 1.0;
+$fs = $preview ? $fs : 0.1;
 
 module clip() { // make me
     translate([0,-wall,0])
