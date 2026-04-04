@@ -20,7 +20,7 @@ magnetThickness = 5.30;
 magnetDistance = holeDiameter/2 + 1.5*magnetDiameter;
 magnetCount = 6;
 
-layerHeight   = 0.2;
+layerHeight   = 0.36;
 layersInCover = 3;
 magnetCover = layerHeight * layersInCover;
 plateWall   = 2;
@@ -33,12 +33,16 @@ screwDiameter = 4.5;
 screwHeadThickness = 4;
 screwHeadDiameter  = 8;
 
+fanThickness = 25;
+fanCornerDiameter = 5;
+fanWidth = holeDiameter;
+
 defaultPlateThickness = magnetThickness + magnetCover + plateWall;
 
 plexiglass = 3.5;
 
-$fa = $preview ? $fa : 5.0;
-$fs = $preview ? $fs : 0.5;
+$fa = $preview ? $fa : 1.0;
+$fs = $preview ? $fs : 0.1;
 
 magnetAngles = [ for (i=[0:magnetCount-1]) 360*i/magnetCount ];
 magnetPoints = [ for (i=[0:magnetCount-1]) let(
@@ -80,7 +84,7 @@ module magnetPlate(h = defaultPlateThickness) {
                 magnetDistance,
                 0,
                 h - ( magnetThickness + magnetCover)
-            ]) cylinder(d=magnetDiameter, h=magnetThickness);
+            ]) cylinder(d=magnetDiameter * 1.1, h=magnetThickness);
         }
 }
 
@@ -109,7 +113,7 @@ module mainPlate() {
     }
 }
 
-module fanPlate() {
+module fanPlateOld() {
     difference() {
         plateThickness = max(
             magnetThickness + magnetCover + plateWall,
@@ -144,6 +148,89 @@ module fanPlate() {
     }
 }
 
+module fanPlate() {
+    wall = 1.5*plateWall;
+    difference() {
+        plateThickness = max(
+            magnetThickness + magnetCover + plateWall,
+            ( screwLength - plexiglass )/2
+        );
+
+        union() {
+            difference() {
+                hull() {
+                    outsideCorner = 2*fanCornerDiameter;
+                    linear_extrude(fanThickness + wall)
+                        hull() for (x=[-0.5,0.5], y=[-0.5,0.5]) translate([
+                            x*(fanWidth-outsideCorner+2*wall),
+                            y*(fanWidth-outsideCorner+2*wall)
+                        ]) circle(d=outsideCorner);
+
+                    blankPlate(plateThickness);
+                }
+                blankPlate(plateThickness);
+            }
+
+            translate([0,0,plateThickness]) rotate([180])
+                magnetPlate(plateThickness);
+        }
+
+        // Fan Hole
+        translate([0,0,-0.1]) {
+            linear_extrude(fanThickness+0.1)
+                hull() for (x=[-0.5,0.5], y=[-0.5,0.5]) translate([
+                    x*(fanWidth-fanCornerDiameter + 0.25),
+                    y*(fanWidth-fanCornerDiameter + 0.25)
+                ]) circle(d=fanCornerDiameter);
+
+            cylinder(d=holeDiameter, h=fanThickness+plateWall+10);
+        }
+
+        // wire hole
+        union() {
+            // Remove the unused magnet
+            translate([
+                fanWidth + 2*wall,
+                0,
+                (fanThickness + plateWall + 10)/2 - 0.1
+            ]) cube([
+                fanWidth + 2*wall,
+                fanWidth + 2*wall,
+                fanThickness + plateWall + 10
+            ], true);
+
+            // Add a slot for the fan wire
+            slot = [wall + 1,10,5];
+            translate([
+                holeDiameter/2 + wall/2,
+                holeDiameter/2 - slot.y/2 - 10,
+                slot.z/2 - 0.01])
+                cube(slot, true);
+        }
+
+        // screw Holes
+        for (x=[-0.5,0.5], y=[-0.5,0.5]) translate([
+            x*screwSpacing,
+            y*screwSpacing,
+            plateThickness-(screwLength+screwHeadThickness) + fanThickness
+        ]) {
+                cylinder(d=screwDiameter, h=screwLength);
+                translate([0,0,screwLength - 0.1])
+                    cylinder(
+                        d=screwHeadDiameter,
+                        h=screwHeadThickness + 0.2
+                    );
+
+                //translate([0,0,screwLength - 0.1])
+                //    cylinder(
+                //        d1=screwDiameter,
+                //        d2=screwHeadDiameter,
+                //        h=screwHeadThickness + 0.2
+                //    );
+            }
+    }
+}
+
 module fanSpacerOld(h=25.25) {
     points = [ for (x=[-0.5,0.5], y=[-0.5,0.5]) [ x*screwSpacing, y*screwSpacing ] ];
 
@@ -158,29 +245,29 @@ module fanSpacerOld(h=25.25) {
 }
 
 module fanSpacer(h=25.25) {
+    d=magnetDiameter+screwDiameter+2*plateWall;
     offset = 5;
     points = [ for (x=[-0.5,0.5], y=[-0.5,0.5]) [ x*screwSpacing, y*screwSpacing ] ];
 
     difference() {
         union() {
-            d=magnetDiameter+screwDiameter+2*plateWall;
             difference() {
-                hull() for (p=points) translate(p) cylinder(d=d, h=h);
-                hull() for (x=[-0.5, 0.5]) translate([
-                    x*magnetDistance,
-                    -magnetDistance+magnetDiameter+plateWall,
-                    magnetCover
-                ]) cylinder(d=magnetDiameter * 1.1, h=magnetThickness + magnetCover);
+                hull() {
+                    for (p=points) translate(p) cylinder(d=d, h=h);
+                    translate([0,offset,0]) blankPlate();
+                }
+                translate([0,offset,0]) blankPlate();
             }
-            translate([0,offset,0]) difference() {
-                translate([0,0,defaultPlateThickness]) rotate([180]) mainPlate();
-                translate([holeDiameter/2+d-plateWall,0,0]) cube([h, holeDiameter, 2*h], true);
-            }
+
+            translate([0,offset,defaultPlateThickness]) rotate([180]) magnetPlate();
         }
+
+        translate([holeDiameter/2+d-plateWall/2,0,h/2]) cube([h, holeDiameter + 2*plateWall, 2*h], true);
 
         translate([0,0,-0.1]) {
             for (p=points) translate(p) cylinder(d=screwDiameter, h=h+0.2);
-            for (p=points) translate(p) cylinder(d=screwHeadDiameter, h=screwHeadThickness);
+            translate([0,0,0])
+            for (p=points) translate(p) cylinder(d=screwHeadDiameter, h=h-defaultPlateThickness);
             hull() for (p=[
                 [0,offset,0],
                 [0,0,h+0.2],
@@ -222,7 +309,10 @@ module exhaustPlate() {
 //magnetPlate();
 //mainPlate();
 //exhaustPlate();
-//fanPlate();
+intersection() {
+fanPlate();
 //fanSpacer();
+//translate([0,0,25])cube([holeDiameter*2, holeDiameter*2, 7], true);
+}
 
 //magnetSample();
